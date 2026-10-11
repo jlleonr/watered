@@ -2,3 +2,631 @@
 @plugin "daisyui" {
   themes: dark --default, light;
 }
+@plugin "daisyui/theme" {
+  name: "dark";
+  default: true;
+  color-scheme: dark;
+  --color-base-100: #111c17;
+  --color-base-200: #192720;
+  --color-base-300: #2a3a31;
+  --color-base-content: #edf4ef;
+  --color-primary: #a8d6ad;
+  --color-primary-content: #183422;
+  --color-secondary: #31483a;
+  --color-secondary-content: #e5eee7;
+  --color-accent: #d8ad69;
+  --color-accent-content: #302411;
+  --color-neutral: #202c25;
+  --color-neutral-content: #e8efe9;
+  --color-warning: #dfbd78;
+  --radius-box: 1.25rem;
+  --radius-field: 0.8rem;
+  --radius-selector: 999px;
+}
+@plugin "daisyui/theme" {
+  name: "light";
+  color-scheme: light;
+  --color-base-100: #f7f6f0;
+  --color-base-200: #efeee7;
+  --color-base-300: #e1e1d7;
+  --color-base-content: #202823;
+  --color-primary: #285b40;
+  --color-primary-content: #ffffff;
+  --color-secondary: #dce9de;
+  --color-secondary-content: #20392b;
+  --color-accent: #a85a16;
+  --color-accent-content: #ffffff;
+  --color-neutral: #d9ded8;
+  --color-neutral-content: #202823;
+  --color-warning: #e2bd73;
+  --radius-box: 1.25rem;
+  --radius-field: 0.8rem;
+  --radius-selector: 999px;
+}
+
+:root {
+  font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-optical-sizing: auto;
+  color-scheme: dark;
+  background: var(--color-base-100);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-width: 0;
+  min-height: 100vh;
+  margin: 0;
+  background:
+    radial-gradient(ellipse at 15% 5%, color-mix(in srgb, var(--color-primary) 7%, transparent), transparent 34rem),
+    var(--color-base-100);
+  color: var(--color-base-content);
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+  padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right))
+    max(1.25rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+}
+
+.topbar {
+  display: flex;
+  width: min(100%, 1120px);
+  min-height: 4.25rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0 auto;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-base-content) 10%, transparent);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  color: var(--color-base-content);
+  font-size: 1.2rem;
+  font-weight: 750;
+  letter-spacing: -0.045em;
+  text-decoration: none;
+}
+
+.brand-mark {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border-radius: 0.75rem;
+  background: var(--color-primary);
+  color: var(--color-primary-content);
+}
+
+.brand-mark svg {
+  width: 1.35rem;
+  height: 1.35rem;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.theme-picker {
+  display: inline-flex;
+  padding: 0.2rem;
+  border: 1px solid color-mix(in srgb, var(--color-base-content) 13%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-base-200) 82%, transparent);
+}
+
+.theme-option {
+  display: inline-flex;
+  min-height: 2.3rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.7rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: color-mix(in srgb, var(--color-base-content) 68%, transparent);
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+
+.theme-option[aria-pressed="true"] {
+  background: var(--color-base-300);
+  color: var(--color-base-content);
+}
+
+.theme-option svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.add-button {
+  gap: 0.45rem;
+  border: 0;
+  border-radius: 999px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--color-primary) 16%, transparent);
+}
+
+.add-button > span:first-child,
+.empty-add-button > span:first-child {
+  font-size: 1.2rem;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.storage-notice {
+  width: min(100%, 1120px);
+  margin: 0.8rem auto 0;
+  color: var(--color-accent);
+  font-size: 0.85rem;
+}
+
+.inventory {
+  width: min(100%, 900px);
+  flex: 1;
+  margin: 0 auto;
+  padding: clamp(2.5rem, 8vh, 5rem) 0 3rem;
+}
+
+.inventory-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 2.2rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.65rem;
+  color: var(--color-primary);
+  font-size: 0.69rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+
+.inventory-heading h1,
+.form-heading h2,
+.empty-state h2,
+.plant-card h2 {
+  margin: 0;
+  color: var(--color-base-content);
+  letter-spacing: -0.045em;
+}
+
+.inventory-heading h1 {
+  font-size: clamp(2.1rem, 5vw, 3rem);
+  font-weight: 720;
+  line-height: 1.05;
+}
+
+.inventory-count {
+  margin: 0.65rem 0 0;
+  color: color-mix(in srgb, var(--color-base-content) 64%, transparent);
+  font-size: 0.95rem;
+}
+
+.collection-count {
+  display: grid;
+  width: 3.1rem;
+  height: 3.1rem;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);
+  border-radius: 50%;
+  color: var(--color-primary);
+  font-size: 0.9rem;
+  font-weight: 750;
+}
+
+.empty-state {
+  display: flex;
+  min-height: 390px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem 1rem 3rem;
+  text-align: center;
+}
+
+.empty-illustration {
+  width: clamp(8.5rem, 30vw, 10.5rem);
+  margin-bottom: 1.15rem;
+}
+
+.empty-illustration svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.empty-state .eyebrow {
+  margin-bottom: 0.7rem;
+}
+
+.empty-state h2 {
+  font-size: clamp(1.45rem, 4vw, 1.8rem);
+  font-weight: 700;
+}
+
+.empty-copy {
+  max-width: 24rem;
+  margin: 0.7rem 0 1.35rem;
+  color: color-mix(in srgb, var(--color-base-content) 65%, transparent);
+  font-size: 0.98rem;
+  line-height: 1.65;
+}
+
+.empty-add-button {
+  min-height: 3rem;
+  gap: 0.55rem;
+  border: 0;
+  border-radius: 999px;
+  padding-inline: 1.35rem;
+  font-weight: 700;
+}
+
+.plant-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.9rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.plant-card {
+  display: flex;
+  min-height: 8rem;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 1rem;
+  border: 1px solid color-mix(in srgb, var(--color-base-content) 10%, transparent);
+  background: color-mix(in srgb, var(--color-base-200) 84%, transparent);
+  padding: 1.2rem;
+  box-shadow: 0 12px 32px color-mix(in srgb, #000 10%, transparent);
+}
+
+.plant-card-mark {
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--color-primary) 15%, var(--color-base-200));
+  color: var(--color-primary);
+}
+
+.plant-card-mark svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.plant-card-content {
+  min-width: 0;
+}
+
+.plant-card h2 {
+  margin: 0.1rem 0 0.85rem;
+  overflow-wrap: anywhere;
+  font-size: 1.16rem;
+  font-weight: 700;
+}
+
+.watered-label {
+  margin: 0 0 0.24rem;
+  color: color-mix(in srgb, var(--color-base-content) 54%, transparent);
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.watered-date {
+  margin: 0;
+  color: var(--color-primary);
+  font-size: 0.95rem;
+  font-weight: 650;
+}
+
+.plant-notes {
+  margin: 0.65rem 0 0;
+  color: color-mix(in srgb, var(--color-base-content) 67%, transparent);
+  font-size: 0.88rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.form-panel {
+  margin-bottom: 1.5rem;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 24%, transparent);
+  border-radius: 1.4rem;
+  background: var(--color-base-200);
+  padding: clamp(1.2rem, 4vw, 2rem);
+  box-shadow: 0 18px 48px color-mix(in srgb, #000 14%, transparent);
+}
+
+.form-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.form-heading h2 {
+  font-size: 1.55rem;
+  font-weight: 720;
+}
+
+.form-heading .eyebrow {
+  margin-bottom: 0.45rem;
+}
+
+.close-button {
+  width: 2.5rem;
+  height: 2.5rem;
+  min-height: 2.5rem;
+  border-radius: 50%;
+}
+
+.close-button svg {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+.plant-form {
+  display: grid;
+  gap: 1.1rem;
+}
+
+.form-control {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.label-text {
+  color: var(--color-base-content);
+  font-size: 0.87rem;
+  font-weight: 680;
+}
+
+.label-text > span[aria-hidden="true"] {
+  color: var(--color-accent);
+}
+
+.optional-label {
+  margin-left: 0.35rem;
+  color: color-mix(in srgb, var(--color-base-content) 52%, transparent);
+  font-size: 0.75rem;
+  font-weight: 450;
+}
+
+.plant-form .input,
+.plant-form .textarea {
+  width: 100%;
+  border-color: color-mix(in srgb, var(--color-base-content) 17%, transparent);
+  background: var(--color-base-100);
+  color: var(--color-base-content);
+}
+
+.plant-form .input::placeholder,
+.plant-form .textarea::placeholder {
+  color: color-mix(in srgb, var(--color-base-content) 42%, transparent);
+}
+
+.plant-form .input:focus,
+.plant-form .textarea:focus {
+  border-color: var(--color-primary);
+  outline-color: color-mix(in srgb, var(--color-primary) 48%, transparent);
+}
+
+.notes-input {
+  min-height: 5.4rem;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.field-hint {
+  color: color-mix(in srgb, var(--color-base-content) 57%, transparent);
+  font-size: 0.76rem;
+}
+
+.form-error {
+  margin: 0;
+  color: #ef9a91;
+  font-size: 0.86rem;
+}
+
+[data-theme="light"] .form-error {
+  color: #a83232;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  padding-top: 0.35rem;
+}
+
+.form-actions .btn {
+  border-radius: 999px;
+}
+
+.form-actions .btn-primary {
+  gap: 0.6rem;
+  border: 0;
+  font-weight: 700;
+}
+
+.app-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding-top: 1rem;
+  color: color-mix(in srgb, var(--color-base-content) 52%, transparent);
+  font-size: 0.78rem;
+}
+
+.footer-leaf {
+  color: var(--color-primary);
+  font-size: 0.9rem;
+}
+
+@media (min-width: 760px) {
+  .app-shell {
+    padding-inline: 2.5rem;
+  }
+
+  .plant-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .plant-card {
+    min-height: 9rem;
+    padding: 1.35rem;
+  }
+}
+
+@media (max-width: 520px) {
+  .app-shell {
+    padding-inline: max(1rem, env(safe-area-inset-left));
+  }
+
+  .topbar {
+    min-height: 4rem;
+  }
+
+  .brand {
+    gap: 0.5rem;
+    font-size: 1.05rem;
+  }
+
+  .brand-mark {
+    width: 1.8rem;
+    height: 1.8rem;
+  }
+
+  .topbar-actions {
+    gap: 0.45rem;
+  }
+
+  .theme-option {
+    min-height: 2.2rem;
+    gap: 0.25rem;
+    padding-inline: 0.55rem;
+    font-size: 0.76rem;
+  }
+
+  .theme-option svg {
+    width: 0.9rem;
+    height: 0.9rem;
+  }
+
+  .add-button {
+    width: 2.5rem;
+    min-height: 2.5rem;
+    padding: 0;
+  }
+
+  .add-button > span:last-child {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+
+  .inventory {
+    padding-top: 3.1rem;
+  }
+
+  .inventory-heading {
+    margin-bottom: 1.6rem;
+  }
+
+  .empty-state {
+    min-height: 340px;
+    padding-top: 0.5rem;
+  }
+
+  .form-panel {
+    margin-inline: -0.15rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .topbar {
+    gap: 0.5rem;
+  }
+
+  .topbar-actions {
+    gap: 0.35rem;
+  }
+
+  .theme-picker {
+    padding: 0.15rem;
+  }
+
+  .theme-option {
+    width: 2.15rem;
+    padding-inline: 0.4rem;
+  }
+
+  .theme-option span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .plant-card,
+  .form-panel {
+    animation: arrive 220ms ease-out both;
+  }
+
+  @keyframes arrive {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
