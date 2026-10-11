@@ -10,6 +10,72 @@ type Plant = {
 }
 
 const themeStorageKey = 'watered-theme'
+const inventoryStorageKey = 'watered-plants'
+
+function isPlant(value: unknown): value is Plant {
+  if (!value || typeof value !== 'object') {
+    return false
+  }
+
+  const plant = value as Record<string, unknown>
+  if (
+    typeof plant.id !== 'string' ||
+    typeof plant.name !== 'string' ||
+    !plant.name.trim() ||
+    typeof plant.notes !== 'string' ||
+    (plant.lastWatered !== null && typeof plant.lastWatered !== 'string')
+  ) {
+    return false
+  }
+
+  if (plant.lastWatered === null) {
+    return true
+  }
+
+  const date = plant.lastWatered
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return false
+  }
+
+  const [year, month, day] = date.split('-').map(Number)
+  const parsedDate = new Date(year, month - 1, day)
+  return (
+    parsedDate.getFullYear() === year &&
+    parsedDate.getMonth() === month - 1 &&
+    parsedDate.getDate() === day
+  )
+}
+
+function getInitialInventory(): { plants: Plant[]; error: string } {
+  try {
+    const storedInventory = window.localStorage.getItem(inventoryStorageKey)
+    if (!storedInventory) {
+      return { plants: [], error: '' }
+    }
+
+    const parsedInventory: unknown = JSON.parse(storedInventory)
+    if (
+      !Array.isArray(parsedInventory) ||
+      !parsedInventory.every(isPlant) ||
+      new Set(parsedInventory.map((plant: Plant) => plant.id)).size !==
+        parsedInventory.length
+    ) {
+      return {
+        plants: [],
+        error:
+          'Saved plants could not be read safely. Your inventory is protected from changes; reload after recovering the saved data.',
+      }
+    }
+
+    return { plants: parsedInventory, error: '' }
+  } catch {
+    return {
+      plants: [],
+      error:
+        'Saved plants could not be read. Your inventory is protected from changes; check browser storage and reload.',
+    }
+  }
+}
 
 function getInitialTheme(): { theme: Theme; error: string } {
   try {
@@ -45,11 +111,31 @@ function formatWateredDate(date: string): string {
   }).format(localDate)
 }
 
+function getDaysSinceWatered(date: string): number {
+  const [year, month, day] = date.split('-').map(Number)
+  const [todayYear, todayMonth, todayDay] = getToday().split('-').map(Number)
+  const wateredDay = Date.UTC(year, month - 1, day)
+  const currentDay = Date.UTC(todayYear, todayMonth - 1, todayDay)
+
+  return Math.floor((currentDay - wateredDay) / 86_400_000)
+}
+
+function formatDaysAgo(date: string): string {
+  const days = getDaysSinceWatered(date)
+  return days > 1 ? `${days} days ago` : ''
+}
+
 function App() {
   const [initialTheme] = useState(getInitialTheme)
+  const [initialInventory] = useState(getInitialInventory)
   const [theme, setTheme] = useState<Theme>(initialTheme.theme)
-  const [plants, setPlants] = useState<Plant[]>([])
+  const [plants, setPlants] = useState<Plant[]>(initialInventory.plants)
+  const [inventoryLoadError] = useState(initialInventory.error)
+  const [inventoryError, setInventoryError] = useState('')
+  const [statusMessage, setStatusMessage] = useState('')
+  const [filter, setFilter] = useState('')
   const [isFormOpen, setIsFormOpen] = useState(false)
+  const [editingPlantId, setEditingPlantId] = useState<string | null>(null)
   const [name, setName] = useState('')
   const [lastWatered, setLastWatered] = useState('')
   const [notes, setNotes] = useState('')
@@ -70,17 +156,51 @@ function App() {
     }
   }
 
+  function savePlants(nextPlants: Plant[]): boolean {
+    if (inventoryLoadError) {
+      return false
+    }
+
+    try {
+      window.localStorage.setItem(inventoryStorageKey, JSON.stringify(nextPlants))
+      setPlants(nextPlants)
+      setInventoryError('')
+      return true
+    } catch {
+      setInventoryError(
+        'Your change could not be saved to this device. Check browser storage and try again.',
+      )
+      return false
+    }
+  }
+
   function openAddForm() {
     setFormError('')
+    setStatusMessage('')
+    setEditingPlantId(null)
+    setName('')
+    setLastWatered('')
+    setNotes('')
     setIsFormOpen(true)
   }
 
   function closeAddForm() {
     setIsFormOpen(false)
+    setEditingPlantId(null)
     setName('')
     setLastWatered('')
     setNotes('')
     setFormError('')
+  }
+
+  function openEditForm(plant: Plant) {
+    setStatusMessage('')
+    setEditingPlantId(plant.id)
+    setName(plant.name)
+    setLastWatered(plant.lastWatered ?? '')
+    setNotes(plant.notes)
+    setFormError('')
+    setIsFormOpen(true)
   }
 
   function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
@@ -97,17 +217,60 @@ function App() {
       return
     }
 
-    setPlants((currentPlants) => [
-      ...currentPlants,
-      {
-        id: crypto.randomUUID(),
-        name: trimmedName,
-        lastWatered: lastWatered || null,
-        notes: notes.trim(),
-      },
-    ])
+    const updatedPlant: Plant = {
+      id: editingPlantId ?? crypto.randomUUID(),
+      name: trimmedName,
+      lastWatered: lastWatered || null,
+      notes: notes.trim(),
+    }
+    const nextPlants = editingPlantId
+      ? plants.map((plant) =>
+          plant.id === editingPlantId ? updatedPlant : plant,
+        )
+      : [...plants, updatedPlant]
+
+    if (!savePlants(nextPlants)) {
+      return
+    }
+
+    setStatusMessage(
+      editingPlantId
+        ? `${trimmedName} updated.`
+        : `${trimmedName} added to your plants.`,
+    )
     closeAddForm()
   }
+
+  function markWateredToday(plant: Plant) {
+    const nextPlants = plants.map((currentPlant) =>
+      currentPlant.id === plant.id
+        ? { ...currentPlant, lastWatered: getToday() }
+        : currentPlant,
+    )
+    if (savePlants(nextPlants)) {
+      setStatusMessage(`${plant.name} marked as watered today.`)
+    }
+  }
+
+  function deletePlant(plant: Plant) {
+    const confirmed = window.confirm(
+      `Delete ${plant.name}? This will permanently remove it from your inventory.`,
+    )
+    if (!confirmed) {
+      return
+    }
+
+    if (savePlants(plants.filter((currentPlant) => currentPlant.id !== plant.id))) {
+      setStatusMessage(`${plant.name} deleted.`)
+      if (editingPlantId === plant.id) {
+        closeAddForm()
+      }
+    }
+  }
+
+  const filteredPlants = plants.filter((plant) =>
+    plant.name.toLocaleLowerCase().includes(filter.trim().toLocaleLowerCase()),
+  )
 
   return (
     <main className="app-shell">
@@ -173,18 +336,32 @@ function App() {
             </button>
           </div>
 
-          <button className="btn btn-primary add-button" type="button" onClick={openAddForm}>
+          <button
+            className="btn btn-primary add-button"
+            type="button"
+            onClick={openAddForm}
+            disabled={Boolean(inventoryLoadError)}
+          >
             <span aria-hidden="true">+</span>
             <span>Add plant</span>
           </button>
         </div>
       </header>
 
-      {themeError && (
-        <p className="storage-notice" role="status">
-          {themeError}
-        </p>
-      )}
+      <div className="app-messages" aria-live="polite">
+        {themeError && <p className="storage-notice">{themeError}</p>}
+        {inventoryLoadError && (
+          <p className="storage-notice storage-error" role="alert">
+            {inventoryLoadError}
+          </p>
+        )}
+        {inventoryError && (
+          <p className="storage-notice storage-error" role="alert">
+            {inventoryError}
+          </p>
+        )}
+        {statusMessage && <p className="storage-notice status-message">{statusMessage}</p>}
+      </div>
 
       <section className="inventory" aria-labelledby="inventory-title">
         <div className="inventory-heading">
@@ -192,7 +369,9 @@ function App() {
             <p className="eyebrow">YOUR LITTLE CORNER OF GREEN</p>
             <h1 id="inventory-title">Your plants</h1>
             <p className="inventory-count">
-              {plants.length === 1 ? '1 plant in your collection' : `${plants.length} plants in your collection`}
+              {plants.length === 1
+                ? '1 plant in your collection'
+                : `${plants.length} plants in your collection`}
             </p>
           </div>
           {plants.length > 0 && (
@@ -202,97 +381,170 @@ function App() {
           )}
         </div>
 
-        {isFormOpen && (
-          <section className="form-panel" aria-labelledby="form-title">
-            <div className="form-heading">
-              <div>
-                <p className="eyebrow">A NEW LEAF</p>
-                <h2 id="form-title">Add a plant</h2>
-              </div>
-              <button
-                className="btn btn-ghost btn-sm close-button"
-                type="button"
-                aria-label="Close add plant form"
-                onClick={closeAddForm}
-              >
-                <svg viewBox="0 0 20 20" aria-hidden="true">
-                  <path
-                    d="m5 5 10 10M15 5 5 15"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeLinecap="round"
-                    strokeWidth="1.8"
-                  />
-                </svg>
-              </button>
-            </div>
-
-            <form className="plant-form" onSubmit={handleSubmit} noValidate>
-              <label className="form-control">
-                <span className="label-text">Plant name <span aria-hidden="true">*</span></span>
-                <input
-                  className="input input-bordered"
-                  type="text"
-                  name="name"
-                  autoComplete="off"
-                  placeholder="e.g. Monstera"
-                  value={name}
-                  onChange={(event) => setName(event.target.value)}
-                  aria-invalid={Boolean(formError && !name.trim())}
-                  aria-describedby={formError ? 'form-error' : undefined}
-                  required
-                  autoFocus
+        {plants.length > 0 && (
+          <div className="inventory-tools">
+            <label className="search-control">
+              <span className="visually-hidden">Filter plants by name</span>
+              <svg viewBox="0 0 20 20" aria-hidden="true">
+                <circle
+                  cx="8.8"
+                  cy="8.8"
+                  r="5.8"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
                 />
-              </label>
-
-              <label className="form-control">
-                <span className="label-text">Last watered <span className="optional-label">Optional</span></span>
-                <input
-                  className="input input-bordered"
-                  type="date"
-                  name="lastWatered"
-                  max={getToday()}
-                  value={lastWatered}
-                  onChange={(event) => setLastWatered(event.target.value)}
-                  aria-describedby={formError ? 'form-error' : 'date-hint'}
+                <path
+                  d="m13.2 13.2 4 4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeWidth="1.6"
                 />
-                <span className="field-hint" id="date-hint">
-                  Leave blank if you are not sure.
-                </span>
-              </label>
-
-              <label className="form-control">
-                <span className="label-text">Notes <span className="optional-label">Optional</span></span>
-                <textarea
-                  className="textarea textarea-bordered notes-input"
-                  name="notes"
-                  placeholder="A little detail to help you remember this one"
-                  rows={3}
-                  value={notes}
-                  onChange={(event) => setNotes(event.target.value)}
-                />
-              </label>
-
-              {formError && (
-                <p className="form-error" id="form-error" role="alert">
-                  {formError}
-                </p>
+              </svg>
+              <input
+                className="input input-bordered"
+                type="search"
+                placeholder="Find a plant"
+                value={filter}
+                onChange={(event) => setFilter(event.target.value)}
+              />
+              {filter && (
+                <button
+                  className="clear-filter"
+                  type="button"
+                  onClick={() => setFilter('')}
+                  aria-label="Clear plant filter"
+                >
+                  Clear
+                </button>
               )}
-
-              <div className="form-actions">
-                <button className="btn btn-ghost" type="button" onClick={closeAddForm}>
-                  Cancel
-                </button>
-                <button className="btn btn-primary" type="submit">
-                  Save plant
-                  <span aria-hidden="true">→</span>
-                </button>
-              </div>
-            </form>
-          </section>
+            </label>
+          </div>
         )}
 
-        {plants.length === 0 && !isFormOpen ? (
+        {isFormOpen && (
+          <div className={editingPlantId ? 'edit-overlay' : undefined}>
+            <section
+              className="form-panel"
+              aria-labelledby="form-title"
+              role={editingPlantId ? 'dialog' : undefined}
+              aria-modal={editingPlantId ? true : undefined}
+            >
+              <div className="form-heading">
+                <div>
+                  <p className="eyebrow">{editingPlantId ? 'A LITTLE UPDATE' : 'A NEW LEAF'}</p>
+                  <h2 id="form-title">{editingPlantId ? 'Edit plant' : 'Add a plant'}</h2>
+                </div>
+                <button
+                  className="btn btn-ghost btn-sm close-button"
+                  type="button"
+                  aria-label={editingPlantId ? 'Close edit form' : 'Close add plant form'}
+                  onClick={closeAddForm}
+                >
+                  <svg viewBox="0 0 20 20" aria-hidden="true">
+                    <path
+                      d="m5 5 10 10M15 5 5 15"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeLinecap="round"
+                      strokeWidth="1.8"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              <form className="plant-form" onSubmit={handleSubmit} noValidate>
+                <label className="form-control">
+                  <span className="label-text">Plant name <span aria-hidden="true">*</span></span>
+                  <input
+                    className="input input-bordered"
+                    type="text"
+                    name="name"
+                    autoComplete="off"
+                    placeholder="e.g. Monstera"
+                    value={name}
+                    onChange={(event) => setName(event.target.value)}
+                    aria-invalid={Boolean(formError && !name.trim())}
+                    aria-describedby={formError ? 'form-error' : undefined}
+                    required
+                    autoFocus
+                    disabled={Boolean(inventoryLoadError)}
+                  />
+                </label>
+
+                <label className="form-control">
+                  <span className="label-text">Last watered <span className="optional-label">Optional</span></span>
+                  <input
+                    className="input input-bordered"
+                    type="date"
+                    name="lastWatered"
+                    max={getToday()}
+                    value={lastWatered}
+                    onChange={(event) => setLastWatered(event.target.value)}
+                    aria-describedby={formError ? 'form-error' : 'date-hint'}
+                    disabled={Boolean(inventoryLoadError)}
+                  />
+                  <span className="field-hint" id="date-hint">
+                    Leave blank if you are not sure.
+                  </span>
+                </label>
+
+                <label className="form-control">
+                  <span className="label-text">Notes <span className="optional-label">Optional</span></span>
+                  <textarea
+                    className="textarea textarea-bordered notes-input"
+                    name="notes"
+                    placeholder="A little detail to help you remember this one"
+                    rows={3}
+                    value={notes}
+                    onChange={(event) => setNotes(event.target.value)}
+                    disabled={Boolean(inventoryLoadError)}
+                  />
+                </label>
+
+                {formError && (
+                  <p className="form-error" id="form-error" role="alert">
+                    {formError}
+                  </p>
+                )}
+
+                <div className={`form-actions${editingPlantId ? ' edit-actions' : ''}`}>
+                  {editingPlantId && (
+                    <button
+                      className="btn btn-ghost delete-action"
+                      type="button"
+                      disabled={Boolean(inventoryLoadError)}
+                      onClick={() => {
+                        const plantToDelete = plants.find(
+                          (plant) => plant.id === editingPlantId,
+                        )
+                        if (plantToDelete) {
+                          deletePlant(plantToDelete)
+                        }
+                      }}
+                    >
+                      Delete
+                    </button>
+                  )}
+                  <button className="btn btn-ghost" type="button" onClick={closeAddForm}>
+                    Cancel
+                  </button>
+                  <button
+                    className="btn btn-primary"
+                    type="submit"
+                    disabled={Boolean(inventoryLoadError)}
+                  >
+                    {editingPlantId ? 'Save changes' : 'Save plant'}
+                    <span aria-hidden="true">→</span>
+                  </button>
+                </div>
+              </form>
+            </section>
+          </div>
+        )}
+
+        {plants.length === 0 && !isFormOpen && !inventoryLoadError ? (
           <div className="empty-state">
             <div className="empty-illustration" aria-hidden="true">
               <svg viewBox="0 0 160 160" fill="none">
@@ -335,8 +587,9 @@ function App() {
           </div>
         ) : (
           plants.length > 0 && (
-            <ul className="plant-list" aria-label="Your plant collection">
-              {plants.map((plant) => (
+            filteredPlants.length > 0 ? (
+              <ul className="plant-list" aria-label="Your plant collection">
+                {filteredPlants.map((plant) => (
                 <li className="card plant-card" key={plant.id}>
                   <div className="plant-card-mark" aria-hidden="true">
                     <svg viewBox="0 0 28 28" fill="none">
@@ -353,13 +606,61 @@ function App() {
                     <h2>{plant.name}</h2>
                     <p className="watered-label">LAST WATERED</p>
                     <p className="watered-date">
-                      {plant.lastWatered ? formatWateredDate(plant.lastWatered) : 'Never watered'}
+                      {plant.lastWatered ? (
+                        <span className="watered-date-content">
+                          {formatWateredDate(plant.lastWatered)}
+                          {getDaysSinceWatered(plant.lastWatered) > 1 && (
+                            <span className="days-ago">
+                              {formatDaysAgo(plant.lastWatered)}
+                            </span>
+                          )}
+                        </span>
+                      ) : (
+                        'Never watered'
+                      )}
                     </p>
                     {plant.notes && <p className="plant-notes">{plant.notes}</p>}
                   </div>
+                  <div className="plant-card-actions">
+                    <button
+                      className="btn btn-primary btn-sm water-button"
+                      type="button"
+                      onClick={() => markWateredToday(plant)}
+                      disabled={Boolean(inventoryLoadError)}
+                    >
+                      Watered today
+                    </button>
+                    <button
+                      className="btn btn-ghost btn-sm edit-toggle"
+                      type="button"
+                      aria-label={`Edit ${plant.name}`}
+                      onClick={() => openEditForm(plant)}
+                      disabled={Boolean(inventoryLoadError)}
+                    >
+                      <svg viewBox="0 0 20 20" aria-hidden="true">
+                        <path
+                          d="m12.9 3.2 3.9 3.9M4 16l3.2-.7L16 6.5a1.8 1.8 0 0 0-2.5-2.5l-8.8 8.8L4 16Z"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="1.6"
+                        />
+                      </svg>
+                    </button>
+                  </div>
                 </li>
               ))}
-            </ul>
+              </ul>
+            ) : (
+              <div className="no-results">
+                <h2>No plants found</h2>
+                <p>Try another name or clear the filter to see your whole collection.</p>
+                <button className="btn btn-ghost" type="button" onClick={() => setFilter('')}>
+                  Clear filter
+                </button>
+              </div>
+            )
           )
         )}
       </section>

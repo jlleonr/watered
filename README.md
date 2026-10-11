@@ -18,3 +18,5 @@ Verify the production build and lint:
 npm run build
 npm run lint
 ```
+
+The current plant inventory and theme preference are stored in this browser's local storage. Plant records are not synchronized or backed up, and no backend or database is used yet.

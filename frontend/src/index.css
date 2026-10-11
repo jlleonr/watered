@@ -51,8 +51,15 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-optical-sizing: auto;
-  color-scheme: dark;
   background: var(--color-base-100);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
 }
 
 * {
@@ -191,6 +198,28 @@ textarea:focus-visible {
   font-size: 0.85rem;
 }
 
+.storage-error {
+  color: #ef9a91;
+}
+
+[data-theme="light"] .storage-error {
+  color: #a83232;
+}
+
+.status-message {
+  color: var(--color-primary);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
 .inventory {
   width: min(100%, 900px);
   flex: 1;
@@ -245,6 +274,63 @@ textarea:focus-visible {
   color: var(--color-primary);
   font-size: 0.9rem;
   font-weight: 750;
+}
+
+.inventory-tools {
+  margin: -0.65rem 0 1.25rem;
+}
+
+.search-control {
+  position: relative;
+  display: flex;
+  min-height: 3rem;
+  align-items: center;
+  border: 1px solid color-mix(in srgb, var(--color-base-content) 14%, transparent);
+  border-radius: 0.9rem;
+  background: var(--color-base-200);
+  color: color-mix(in srgb, var(--color-base-content) 56%, transparent);
+}
+
+.search-control > svg {
+  width: 1.15rem;
+  height: 1.15rem;
+  flex: 0 0 auto;
+  margin-left: 1rem;
+}
+
+.search-control .input {
+  width: 100%;
+  height: 2.9rem;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--color-base-content);
+}
+
+.search-control .input:focus {
+  outline: none;
+}
+
+.search-control:focus-within {
+  border-color: var(--color-primary);
+  outline: 3px solid color-mix(in srgb, var(--color-primary) 28%, transparent);
+  outline-offset: 2px;
+}
+
+.search-control .input::placeholder {
+  color: color-mix(in srgb, var(--color-base-content) 47%, transparent);
+}
+
+.clear-filter {
+  flex: 0 0 auto;
+  margin-right: 0.75rem;
+  border: 0;
+  background: transparent;
+  color: var(--color-primary);
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 700;
 }
 
 .empty-state {
@@ -305,7 +391,8 @@ textarea:focus-visible {
 
 .plant-card {
   display: flex;
-  min-height: 8rem;
+  min-height: 9rem;
+  flex-wrap: wrap;
   flex-direction: row;
   align-items: flex-start;
   gap: 1rem;
@@ -333,6 +420,7 @@ textarea:focus-visible {
 
 .plant-card-content {
   min-width: 0;
+  flex: 1 1 10rem;
 }
 
 .plant-card h2 {
@@ -357,12 +445,77 @@ textarea:focus-visible {
   font-weight: 650;
 }
 
+.watered-date-content {
+  display: grid;
+  justify-items: start;
+  gap: 0.2rem;
+}
+
+.days-ago {
+  color: color-mix(in srgb, var(--color-base-content) 62%, transparent);
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
 .plant-notes {
   margin: 0.65rem 0 0;
   color: color-mix(in srgb, var(--color-base-content) 67%, transparent);
   font-size: 0.88rem;
   line-height: 1.5;
   overflow-wrap: anywhere;
+}
+
+.plant-card-actions {
+  display: flex;
+  width: 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid color-mix(in srgb, var(--color-base-content) 9%, transparent);
+}
+
+.plant-card-actions .btn {
+  min-height: 2.45rem;
+  border-radius: 999px;
+  padding-inline: 0.9rem;
+  font-size: 0.78rem;
+}
+
+.plant-card-actions .water-button {
+  border: 0;
+  font-weight: 700;
+}
+
+.plant-card-actions .edit-toggle {
+  width: 2.45rem;
+  min-width: 2.45rem;
+  padding: 0;
+  color: color-mix(in srgb, var(--color-base-content) 72%, transparent);
+}
+
+.edit-toggle svg {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.no-results {
+  padding: 2rem 1.2rem;
+  border: 1px dashed color-mix(in srgb, var(--color-base-content) 22%, transparent);
+  border-radius: 1.2rem;
+  text-align: center;
+}
+
+.no-results h2 {
+  margin: 0;
+  color: var(--color-base-content);
+  font-size: 1.1rem;
+}
+
+.no-results p {
+  margin: 0.5rem 0 0.9rem;
+  color: color-mix(in srgb, var(--color-base-content) 64%, transparent);
+  font-size: 0.9rem;
 }
 
 .form-panel {
@@ -372,6 +525,27 @@ textarea:focus-visible {
   background: var(--color-base-200);
   padding: clamp(1.2rem, 4vw, 2rem);
   box-shadow: 0 18px 48px color-mix(in srgb, #000 14%, transparent);
+}
+
+.edit-overlay {
+  position: fixed;
+  z-index: 20;
+  inset: 0;
+  display: grid;
+  overflow-y: auto;
+  place-items: center;
+  padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right))
+    max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+  background: color-mix(in srgb, #050906 72%, transparent);
+  backdrop-filter: blur(5px);
+}
+
+.edit-overlay .form-panel {
+  width: min(100%, 34rem);
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  margin: auto;
+  box-shadow: 0 24px 80px color-mix(in srgb, #000 42%, transparent);
 }
 
 .form-heading {
@@ -405,11 +579,13 @@ textarea:focus-visible {
 
 .plant-form {
   display: grid;
+  min-width: 0;
   gap: 1.1rem;
 }
 
 .form-control {
   display: grid;
+  min-width: 0;
   gap: 0.45rem;
 }
 
@@ -433,6 +609,8 @@ textarea:focus-visible {
 .plant-form .input,
 .plant-form .textarea {
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
   border-color: color-mix(in srgb, var(--color-base-content) 17%, transparent);
   background: var(--color-base-100);
   color: var(--color-base-content);
@@ -472,6 +650,8 @@ textarea:focus-visible {
 
 .form-actions {
   display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
   justify-content: flex-end;
   gap: 0.6rem;
   padding-top: 0.35rem;
@@ -485,6 +665,15 @@ textarea:focus-visible {
   gap: 0.6rem;
   border: 0;
   font-weight: 700;
+}
+
+.form-actions .delete-action {
+  margin-right: auto;
+  color: #ef9a91;
+}
+
+[data-theme="light"] .form-actions .delete-action {
+  color: #a83232;
 }
 
 .app-footer {
@@ -514,6 +703,10 @@ textarea:focus-visible {
   .plant-card {
     min-height: 9rem;
     padding: 1.35rem;
+  }
+
+  .plant-card-actions {
+    gap: 0.5rem;
   }
 }
 
@@ -582,6 +775,25 @@ textarea:focus-visible {
 
   .form-panel {
     margin-inline: -0.15rem;
+  }
+
+  .form-actions.edit-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .form-actions.edit-actions .delete-action {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .form-actions.edit-actions > .btn-ghost:not(.delete-action) {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .form-actions.edit-actions .btn-primary {
+    grid-column: 1 / -1;
   }
 }
 
